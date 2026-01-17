@@ -21,12 +21,16 @@ if st.button("Evaluate"):
 
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-        prompt = f"""
+prompt = f"""
 You are an English placement examiner.
-Evaluate the student's writing.
-Give:
+
+Evaluate the student's writing and give:
 - Grammar score (0–5)
 - Vocabulary score (0–5)
 - Coherence score (0–5)
-- Overall
-Add Streamlit app
+- Overall level (A1, A2, B1, B2, or C1)
+
+Student text:
+{student_text}
+"""
+
