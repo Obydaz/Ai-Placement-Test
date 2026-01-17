@@ -1,56 +1,127 @@
 import streamlit as st
-from openai import OpenAI
 
-st.set_page_config(page_title="AI Placement Test", layout="centered")
-st.title("AI Placement Test (MCQ)")
+st.set_page_config(page_title="AI Placement Test (Mixed)", layout="centered")
+st.title("AI Placement Test (Reading + Grammar + Vocabulary)")
 
-QUESTIONS = [
+# ----------------------------
+# 1) READING COMPREHENSION
+# ----------------------------
+st.header("Section 1: Reading Comprehension")
+
+PASSAGE = """
+Maya is a university student who works part-time in a small café. She starts her day early, checks her messages,
+and takes the bus to campus. After classes, she goes to the café and works for four hours. Maya enjoys the job
+because she meets many people and practices her communication skills. However, it can be tiring when the café is
+busy. To stay healthy, she tries to sleep well and drink enough water. On weekends, she studies at home and
+sometimes visits her family.
+"""
+
+st.write(PASSAGE)
+
+READING_QS = [
     {
-        "q": "Choose the correct sentence:",
-        "options": ["She go to school every day.", "She goes to school every day.", "She going to school every day."],
-        "answer": "She goes to school every day.",
-        "skill": "Present Simple / S-V agreement",
-        "level": "A1-A2"
+        "q": "Why does Maya enjoy her job at the café?",
+        "options": [
+            "Because she gets free food every day.",
+            "Because she meets people and practices communication.",
+            "Because she does not have classes anymore."
+        ],
+        "answer": "Because she meets people and practices communication.",
+        "skill": "Reading - main idea"
     },
     {
-        "q": "I ______ English right now.",
-        "options": ["study", "am studying", "studies"],
-        "answer": "am studying",
-        "skill": "Present Continuous",
-        "level": "A2"
+        "q": "What does Maya do on weekends?",
+        "options": [
+            "She works at the café all day.",
+            "She studies at home and sometimes visits her family.",
+            "She travels to another city every weekend."
+        ],
+        "answer": "She studies at home and sometimes visits her family.",
+        "skill": "Reading - detail"
     },
     {
-        "q": "If I had time, I ______ travel more.",
-        "options": ["will", "would", "am"],
-        "answer": "would",
-        "skill": "Second Conditional",
-        "level": "B1-B2"
-    },
-    {
-        "q": "By the time we arrived, the movie ______ .",
-        "options": ["started", "had started", "has started"],
-        "answer": "had started",
-        "skill": "Past Perfect",
-        "level": "B1"
-    },
-    {
-        "q": "Choose the best word: This book is very ______.",
-        "options": ["interested", "interesting", "interest"],
-        "answer": "interesting",
-        "skill": "Adjectives (-ed / -ing)",
-        "level": "A2-B1"
+        "q": "What helps Maya stay healthy?",
+        "options": [
+            "Sleeping well and drinking enough water.",
+            "Eating only sweets at the café.",
+            "Studying all night without rest."
+        ],
+        "answer": "Sleeping well and drinking enough water.",
+        "skill": "Reading - inference/detail"
     },
 ]
 
-st.subheader("Answer the questions")
+reading_answers = []
+for i, item in enumerate(READING_QS, start=1):
+    choice = st.radio(f"R{i}. {item['q']}", item["options"], key=f"r{i}")
+    reading_answers.append(choice)
 
-user_answers = []
-for i, item in enumerate(QUESTIONS, start=1):
-    choice = st.radio(f"Q{i}. {item['q']}", item["options"], key=f"q{i}")
-    user_answers.append(choice)
+# ----------------------------
+# 2) GRAMMAR
+# ----------------------------
+st.header("Section 2: Grammar")
 
-def cefr_from_score(score, total):
-    pct = score / total
+GRAMMAR_QS = [
+    {
+        "q": "She ____ to campus by bus every day.",
+        "options": ["go", "goes", "going"],
+        "answer": "goes",
+        "skill": "Present Simple"
+    },
+    {
+        "q": "They ____ dinner when I called them.",
+        "options": ["have", "were having", "has"],
+        "answer": "were having",
+        "skill": "Past Continuous"
+    },
+    {
+        "q": "If I ____ more time, I would read more books.",
+        "options": ["have", "had", "will have"],
+        "answer": "had",
+        "skill": "Second Conditional"
+    },
+]
+
+grammar_answers = []
+for i, item in enumerate(GRAMMAR_QS, start=1):
+    choice = st.radio(f"G{i}. {item['q']}", item["options"], key=f"g{i}")
+    grammar_answers.append(choice)
+
+# ----------------------------
+# 3) VOCABULARY
+# ----------------------------
+st.header("Section 3: Vocabulary")
+
+VOCAB_QS = [
+    {
+        "q": "Choose the best meaning of 'tiring' in the passage:",
+        "options": ["fun", "making you feel tired", "expensive"],
+        "answer": "making you feel tired",
+        "skill": "Meaning in context"
+    },
+    {
+        "q": "Choose the best word: She ____ her messages in the morning.",
+        "options": ["checks", "checkers", "checking"],
+        "answer": "checks",
+        "skill": "Common verb usage"
+    },
+    {
+        "q": "Which word is closest in meaning to 'enough'?",
+        "options": ["a lot", "sufficient", "dangerous"],
+        "answer": "sufficient",
+        "skill": "Synonym"
+    },
+]
+
+vocab_answers = []
+for i, item in enumerate(VOCAB_QS, start=1):
+    choice = st.radio(f"V{i}. {item['q']}", item["options"], key=f"v{i}")
+    vocab_answers.append(choice)
+
+# ----------------------------
+# SCORING + LEVEL ESTIMATE
+# ----------------------------
+def estimate_level(pct: float) -> str:
     if pct < 0.35: return "A1"
     if pct < 0.55: return "A2"
     if pct < 0.75: return "B1"
@@ -59,20 +130,38 @@ def cefr_from_score(score, total):
 
 if st.button("Get Result"):
     score = 0
-    wrong_skills = []
+    total = len(READING_QS) + len(GRAMMAR_QS) + len(VOCAB_QS)
+    weak_skills = []
 
-    for ans, item in zip(user_answers, QUESTIONS):
+    # Reading
+    for ans, item in zip(reading_answers, READING_QS):
         if ans == item["answer"]:
             score += 1
         else:
-            wrong_skills.append(item["skill"])
+            weak_skills.append(item["skill"])
 
-    st.write(f"Score: {score}/{len(QUESTIONS)}")
-    st.write("Estimated Level:", cefr_from_score(score, len(QUESTIONS)))
+    # Grammar
+    for ans, item in zip(grammar_answers, GRAMMAR_QS):
+        if ans == item["answer"]:
+            score += 1
+        else:
+            weak_skills.append(item["skill"])
 
-    if wrong_skills:
-        st.write("Weak areas to practice:")
-        for s in sorted(set(wrong_skills)):
+    # Vocabulary
+    for ans, item in zip(vocab_answers, VOCAB_QS):
+        if ans == item["answer"]:
+            score += 1
+        else:
+            weak_skills.append(item["skill"])
+
+    pct = score / total
+    st.subheader("Result")
+    st.write(f"Score: {score}/{total} ({pct:.0%})")
+    st.write("Estimated Level:", estimate_level(pct))
+
+    if weak_skills:
+        st.write("Weak areas:")
+        for s in sorted(set(weak_skills)):
             st.write("- ", s)
     else:
-        st.success("Excellent! No weak areas detected in this short test.")
+        st.success("Excellent — no weak areas detected in this short test.")
